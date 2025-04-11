@@ -1,0 +1,12 @@
+version: '3.8'
+services:
+  webhook:
+    build: .
+    ports:
+      - "5100:5100"
+    env_file:
+      - .env
+    volumes:
+      - .:/app
+    container_name: grafana-webhook
+    restart: always
