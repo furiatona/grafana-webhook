@@ -29,7 +29,7 @@ def verify_credentials(credentials: HTTPBasicCredentials = Depends(security)):
         )
     return credentials.username
 
-@app.post("/api/v1/webhook/grafana")
+@app.post("/api/v1/webhook/grafana/top_processes")
 async def receive_webhook(
     request: Request,
     username: str = Depends(verify_credentials)
