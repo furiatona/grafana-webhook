@@ -10,16 +10,18 @@ TEMP_FILE="/tmp/top_processes.prom.$$"
   echo "# HELP top_processes Top 5 CPU-consuming processes on the server"
   echo "# TYPE top_processes gauge"
 
-  count=0
+  declare -A cpu_sums
   while read -r user cpu command; do
-    command="${command//\"/\\\"}"
-    echo "top_processes{user=\"$user\",command=\"$command\"} $cpu"
-    ((count++))
-  done < <(ps -eo user,%cpu,comm --sort=-%cpu | tail -n +2 | head -n 5)
+    key="$user|$command"
+    cpu_sums["$key"]=$(echo "${cpu_sums[$key]:-0} + $cpu" | bc)
+  done < <(ps -eo user,%cpu,comm --sort=-%cpu | tail -n +2)
 
-  if [ "$count" -eq 0 ]; then
-    echo "top_processes{user=\"none\",command=\"no_high_cpu\"} 0"
-  fi
+  for key in "${!cpu_sums[@]}"; do
+    user=${key%%|*}
+    command=${key#*|}
+    command="${command//\"/\\\"}"
+    echo "top_processes{user=\"$user\",command=\"$command\"} ${cpu_sums[$key]}"
+  done | sort -k2 -nr | head -n 5
 } > "$TEMP_FILE"
 
 mv "$TEMP_FILE" "$OUTPUT_FILE"
